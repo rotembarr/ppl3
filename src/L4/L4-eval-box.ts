@@ -60,8 +60,6 @@ const evalTraceExp = (exp: TraceExp): Result<void> =>
         )
     );
 
-    // complete this
-
 // HW3 use these functions
 const printPreTrace = (name: string, vals: Value[], counter: number): void =>
     console.log(`>${" >".repeat(counter)} (${name} ${map(valueToString, vals)})`)
@@ -93,19 +91,21 @@ const applyClosure = (proc: Closure, args: Value[]): Result<Value> => {
 
 const applyTracedClosure = (proc: TracedClosure, args: Value[]): Result<Value> => {
     const vars = map((v: VarDecl) => v.var, proc.closure.params);
-    const cnt = unbox(proc.cnt) // Depth of this closure is being entered.
-
-    // Print entering the procedure.
+    
+    // Depth of this closure is being entered.
+    const cnt = unbox(proc.cnt) 
     setBox(proc.cnt, cnt+1)
-    console.log(`${'> '.repeat(cnt+1)}(${proc.name} ${valueToString(args[0])})`)
     
-    // Apply the closure.
+    // Apply the closure and print.
+    printPreTrace(proc.name, args, cnt)
     const res =  evalSequence(proc.closure.body, makeExtEnv(vars, args, proc.closure.env));
-    
-    // Print exiting from the procedure.
-    isOk(res) ? console.log(`${'< '.repeat(cnt+1)}${valueToString(res.value)}`) : console.log("fuck")
+    isOk(res) ? printPostTrace(res.value, cnt) : console.log("fuck")
+
+    // Return this cnt to prev state.
+    const cnt2 = unbox(proc.cnt) 
+    setBox(proc.cnt, cnt2-1)
+
     return res;
-    // complete this
 } 
 
 

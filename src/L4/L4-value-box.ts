@@ -48,7 +48,7 @@ export interface SymbolSExp {
 export interface TracedClosure {
     tag: "TracedClosure";
     closure: Closure;
-    name: String;
+    name: string;
     cnt: Box<number>
 }
 export const makeTracedClosure = (closure: Closure, name: string): TracedClosure =>
