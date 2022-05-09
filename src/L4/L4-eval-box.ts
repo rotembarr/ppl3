@@ -5,14 +5,15 @@
 import { map, repeat, zipWith } from "ramda";
 import { isBoolExp, isCExp, isLitExp, isNumExp, isPrimOp, isStrExp, isVarRef, isSetExp,
          isAppExp, isDefineExp, isIfExp, isLetrecExp, isLetExp, isProcExp, Binding, VarDecl, VarRef, CExp, Exp, IfExp, LetrecExp, LetExp, ProcExp, Program, SetExp,
-         parseL4Exp, DefineExp, isTraceExp as isTraceExp, TraceExp, makeVarRef} from "./L4-ast";
+         parseL4Exp, DefineExp, isTraceExp as isTraceExp, TraceExp, makeVarRef, makeNumExp, makeBoolExp, makeStrExp, makeProcExp, makeLitExp, NumExp, BoolExp, StrExp, LitExp, PrimOp, unparse} from "./L4-ast";
 import { applyEnv, applyEnvBdg, globalEnvAddBinding, makeExtEnv, setFBinding,
-            theGlobalEnv, Env, FBinding } from "./L4-env-box";
+            theGlobalEnv, Env, FBinding, unbox, setBox } from "./L4-env-box";
 import { isClosure, makeClosure, Closure, Value, valueToString, TracedClosure, isTraceClosure, makeTracedClosure } from "./L4-value-box";
 import { applyPrimitive } from "./evalPrimitive-box";
 import { first, rest, isEmpty, cons } from "../shared/list";
-import { Result, bind, mapv, mapResult, makeFailure, makeOk } from "../shared/result";
+import { Result, bind, mapv, mapResult, makeFailure, makeOk, isOk } from "../shared/result";
 import { parse as p } from "../shared/parser";
+import { isBoolean, isNumber, isString } from "../shared/type-predicates";
 
 // ========================================================
 // Eval functions
@@ -43,7 +44,22 @@ export const isTrueValue = (x: Value): boolean =>
 
     
 // HW3
+const pullClosure = (bdg: FBinding) : Result<Closure> => {
+    const val = unbox(bdg.val);
+    return isClosure(val) ? 
+        makeOk(val) :
+        makeFailure("asas");
+}
+
 const evalTraceExp = (exp: TraceExp): Result<void> =>
+    // TODO - change globalEnv to specific env
+    // Add - 
+    bind(applyEnvBdg(theGlobalEnv, exp.var.var), (bdg: FBinding) =>
+        bind(pullClosure(bdg), (closure: Closure) =>
+             makeOk(setFBinding(bdg, makeTracedClosure(closure, exp.var.var)))
+        )
+    );
+
     // complete this
 
 // HW3 use these functions
@@ -75,8 +91,22 @@ const applyClosure = (proc: Closure, args: Value[]): Result<Value> => {
     return evalSequence(proc.body, makeExtEnv(vars, args, proc.env));
 }
 
-const applyTracedClosure = (proc: TracedClosure, args: Value[]): Result<Value> => 
+const applyTracedClosure = (proc: TracedClosure, args: Value[]): Result<Value> => {
+    const vars = map((v: VarDecl) => v.var, proc.closure.params);
+    const cnt = unbox(proc.cnt) // Depth of this closure is being entered.
+
+    // Print entering the procedure.
+    setBox(proc.cnt, cnt+1)
+    console.log(`${'> '.repeat(cnt+1)}(${proc.name} ${valueToString(args[0])})`)
+    
+    // Apply the closure.
+    const res =  evalSequence(proc.closure.body, makeExtEnv(vars, args, proc.closure.env));
+    
+    // Print exiting from the procedure.
+    isOk(res) ? console.log(`${'< '.repeat(cnt+1)}${valueToString(res.value)}`) : console.log("fuck")
+    return res;
     // complete this
+} 
 
 
 
@@ -144,4 +174,3 @@ const evalSet = (exp: SetExp, env: Env): Result<void> =>
     bind(applicativeEval(exp.val, env), (val: Value) =>
         mapv(applyEnvBdg(env, exp.var.var), (bdg: FBinding) =>
             setFBinding(bdg, val)));
-
