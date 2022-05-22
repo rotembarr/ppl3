@@ -48,12 +48,10 @@ const pullClosure = (bdg: FBinding) : Result<Closure> => {
     const val = unbox(bdg.val);
     return isClosure(val) ? 
         makeOk(val) :
-        makeFailure("asas");
+        makeFailure("trace has been done to non function varrRef");
 }
 
 const evalTraceExp = (exp: TraceExp): Result<void> =>
-    // TODO - change globalEnv to specific env
-    // Add - 
     bind(applyEnvBdg(theGlobalEnv, exp.var.var), (bdg: FBinding) =>
         bind(pullClosure(bdg), (closure: Closure) =>
              makeOk(setFBinding(bdg, makeTracedClosure(closure, exp.var.var)))

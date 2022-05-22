@@ -28,6 +28,49 @@ describe('HW3 trace', () => {
         expect(consoleSpy).toHaveBeenCalledWith("< < 1");
         expect(consoleSpy).toHaveBeenCalledWith("< 2");
     });   
+
+    it('My test 1', () => {
+        const consoleSpy = jest.spyOn(console, 'log');
+        expect(bind(parseL4(`
+        (L4
+            (define list-len
+                (lambda(l)
+                    (if (eq? l (list))
+                    0
+                    (+ 1 (list-len (cdr l))))))
+            (define f list-len)
+            (trace list-len)
+            (f '(s t))
+        )`), evalProgram)).toEqual(makeOk(2));
+        expect(consoleSpy).toHaveBeenCalledWith("> (list-len (t))");
+        expect(consoleSpy).toHaveBeenCalledWith("> > (list-len '())");
+        expect(consoleSpy).toHaveBeenCalledWith("< < 0");
+        expect(consoleSpy).toHaveBeenCalledWith("< 1");
+    });   
+    
+    it('My test 2', () => {
+        const consoleSpy = jest.spyOn(console, 'log');
+        expect(bind(parseL4(`
+        (L4
+            (define fib
+                (lambda (n)
+                    (if (eq? n 0)
+                        0
+                        (if (eq? n 1)
+                            1
+                            (+ (fib (- n 1)) (fib (- n 2)) )
+                        )
+                    )
+                )
+            )
+            (trace fib)
+            (fib 7)
+        )`), evalProgram)).toEqual(makeOk(13));
+        expect(consoleSpy).toHaveBeenCalledWith("> (list-len (t))");
+        // expect(consoleSpy).toHaveBeenCalledWith("> > (list-len '())");
+        // expect(consoleSpy).toHaveBeenCalledWith("< < 0");
+        // expect(consoleSpy).toHaveBeenCalledWith("< 1");
+    });   
 })
 
 describe('L4 Box Environment', () => {
